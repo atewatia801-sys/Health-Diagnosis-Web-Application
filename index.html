@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Teen Health Helper — Guided Check</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg1:#071029; --bg2:#071939;
+      --card:#071526cc; --muted:#9fb0d9; --accent1:#1164ff; --accent2:#12d1c9;
+      --ok:#28a745; --warn:#f39c12; --danger:#e74c3c;
+      --radius:16px; --glass: rgba(255,255,255,0.04);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;background:linear-gradient(120deg,var(--bg1),var(--bg2));color:#e9f1ff;min-height:100vh}
+    .bg{
+      position:fixed; inset:0; z-index:-2; overflow:hidden;
+      background: radial-gradient(800px 400px at -10% -10%, rgba(17,100,255,.14), transparent 30%),
+                  radial-gradient(700px 350px at 110% 110%, rgba(18,209,201,.12), transparent 30%);
+    }
+    .blob{position:absolute;border-radius:50%;filter:blur(60px);opacity:.5;mix-blend-mode:screen}
+    .b1{width:40vmax;height:40vmax;left:-15%;top:-10%;background:linear-gradient(135deg,#1164ff,#7a5af8);animation:float1 18s ease-in-out infinite}
+    .b2{width:34vmax;height:34vmax;right:-8%;bottom:-8%;background:linear-gradient(135deg,#12d1c9,#39e1d0);animation:float2 22s ease-in-out infinite}
+    @keyframes float1{0%{transform:translate(0,0) scale(1)}50%{transform:translate(6%,8%) scale(1.05)}100%{transform:translate(0,0) scale(1)}}
+    @keyframes float2{0%{transform:translate(0,0) scale(1)}50%{transform:translate(-6%,-8%) scale(0.98)}100%{transform:translate(0,0) scale(1)}}
+
+    header{display:flex;align-items:center;gap:12px;padding:22px 34px;background:linear-gradient(180deg, rgba(0,0,0,.15), rgba(0,0,0,.05));border-bottom:1px solid rgba(255,255,255,.03)}
+    header .logo{display:flex;gap:12px;align-items:center;font-weight:700}
+    header .logo .ico{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,var(--accent1),var(--accent2));display:flex;align-items:center;justify-content:center;color:white;font-weight:800}
+    header .right{margin-left:auto;color:var(--muted);font-size:.95rem}
+
+    .wrap{max-width:1100px;margin:30px auto;padding:0 18px;display:grid;grid-template-columns:1.05fr .95fr;gap:22px}
+    @media (max-width:980px){.wrap{grid-template-columns:1fr;padding:16px}}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01)); border:1px solid var(--glass); border-radius:var(--radius); padding:20px; box-shadow:0 10px 30px rgba(3,10,30,.6)}
+    h1{margin:0;font-size:20px}
+    p.lead{color:var(--muted);margin:8px 0 18px}
+
+    /* Stepper */
+    .stepper{display:flex;gap:8px;background:rgba(255,255,255,.02);padding:8px;border-radius:999px;margin-bottom:16px}
+    .step{flex:1;padding:10px 12px;text-align:center;border-radius:999px;color:#cfe5ff;font-weight:700;font-size:.9rem}
+    .step.active{background:linear-gradient(90deg,var(--accent1),var(--accent2));color:white;box-shadow:0 6px 18px rgba(17,100,255,.18)}
+
+    label{display:block;margin:10px 4px;color:#dbeaff;font-weight:600}
+    select,input[type="text"]{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.02);color:inherit;font-size:15px;outline:none}
+    select:focus,input:focus{box-shadow:0 6px 20px rgba(17,100,255,.08);border-color:rgba(17,100,255,.6)}
+
+    .row{display:flex;gap:12px}
+    .row .col{flex:1}
+    .btn{display:inline-block;background:linear-gradient(90deg,var(--accent1),var(--accent2));padding:12px 16px;border-radius:12px;color:white;font-weight:800;border:none;cursor:pointer;margin-top:10px}
+    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.06)}
+
+    /* Result */
+    .result {display:none; margin-top:12px; padding:14px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.01));border:1px solid rgba(255,255,255,.03)}
+    .result.visible{display:block}
+    .kv{display:grid;grid-template-columns:160px 1fr;padding:8px 0;border-bottom:1px dashed rgba(255,255,255,.03);align-items:start}
+    .kv b{color:#cfe0ff}
+    .tips{color:var(--muted);margin-top:8px}
+    .badge{display:inline-block;padding:6px 10px;border-radius:999px;font-weight:700}
+    .badge.ok{background:rgba(40,167,69,.12);color:var(--ok);border:1px solid rgba(40,167,69,.08)}
+    .badge.warn{background:rgba(243,156,18,.12);color:var(--warn);border:1px solid rgba(243,156,18,.08)}
+    .badge.danger{background:rgba(231,76,60,.12);color:var(--danger);border:1px solid rgba(231,76,60,.08)}
+
+    .doctor-list{margin-top:10px}
+    .doc{background:rgba(255,255,255,.02);padding:10px;border-radius:10px;margin-bottom:8px;border:1px solid rgba(255,255,255,.03)}
+    .muted{color:var(--muted);font-size:0.95rem}
+
+    footer{max-width:1100px;margin:18px auto;color:var(--muted);text-align:center;font-size:14px;padding-bottom:30px}
+  </style>
+</head>
+<body>
+  <div class="bg"><div class="blob b1"></div><div class="blob b2"></div></div>
+
+  <header>
+    <div class="logo"><div class="ico">TH</div><div>Teen Health Helper</div></div>
+    <div class="right muted">Fast • Private • Teen-friendly</div>
+  </header>
+
+  <main class="wrap">
+    <!-- Left: Stepper + Inputs -->
+    <section class="card">
+      <h1>Guided Check</h1>
+      <p class="lead">Choose a category, pick a symptom, set severity and your city. We'll suggest remedies and doctors.</p>
+
+      <div class="stepper" id="stepper">
+        <div class="step active">1. Category</div>
+        <div class="step">2. Symptom</div>
+        <div class="step">3. Severity</div>
+        <div class="step">4. City</div>
+      </div>
+
+      <!-- Step 1 -->
+      <div id="step1">
+        <label for="category">Health Category</label>
+        <select id="category">
+          <option value="">— Select category —</option>
+        </select>
+        <button class="btn" id="to2">Next: Symptom →</button>
+      </div>
+
+      <!-- Step 2 -->
+      <div id="step2" style="display:none">
+        <label for="symptom">Symptom</label>
+        <select id="symptom">
+          <option value="">— Select symptom —</option>
+        </select>
+        <div style="display:flex;gap:10px;margin-top:10px">
+          <button class="btn ghost" id="back1">← Back</button>
+          <button class="btn" id="to3">Next: Severity →</button>
+        </div>
+      </div>
+
+      <!-- Step 3 -->
+      <div id="step3" style="display:none">
+        <label>Severity</label>
+        <div style="display:flex;gap:10px">
+          <button class="btn ghost sev" data-level="mild">Mild</button>
+          <button class="btn ghost sev" data-level="moderate">Moderate</button>
+          <button class="btn ghost sev" data-level="severe">Severe</button>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:10px">
+          <button class="btn ghost" id="back2">← Back</button>
+          <button class="btn" id="to4">Next: City →</button>
+        </div>
+      </div>
+
+      <!-- Step 4 -->
+      <div id="step4" style="display:none">
+        <label for="city">City (choose from list or type)</label>
+        <select id="city">
+          <option value="">— Select city —</option>
+          <option value="Pune">Pune</option>
+          <option value="Mumbai">Mumbai</option>
+          <option value="Delhi">Delhi</option>
+          <option value="Bangalore">Bangalore</option>
+          <option value="Chennai">Chennai</option>
+          <option value="Kolkata">Kolkata</option>
+          <option value="Hyderabad">Hyderabad</option>
+          <option value="Ahmedabad">Ahmedabad</option>
+          <option value="Jaipur">Jaipur</option>
+          <option value="Other">Other / Not listed</option>
+        </select>
+        <input type="text" id="cityOther" placeholder="If Other, type your city (optional)" style="margin-top:8px;display:none" />
+        <div style="display:flex;gap:10px;margin-top:10px">
+          <button class="btn ghost" id="back3">← Back</button>
+          <button class="btn" id="finish">Get Recommendation</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right: Result -->
+    <aside class="card">
+      <h1>Your Result</h1>
+      <p class="muted">We do not store your data. This is not medical advice — for emergencies call local emergency services.</p>
+
+      <div id="result" class="result">
+        <div class="kv"><b>Category</b><div id="rCategory">—</div></div>
+        <div class="kv"><b>Symptom</b><div id="rSymptom">—</div></div>
+        <div class="kv"><b>Likely Condition</b><div id="rCondition">—</div></div>
+        <div class="kv"><b>Type</b><div id="rType">—</div></div>
+        <div class="kv"><b>Possible Causes</b><div id="rCause">—</div></div>
+        <div class="kv"><b>Home Remedies</b><div id="rRemedy">—</div></div>
+        <div class="kv"><b>Severity Advice</b><div id="rSeverity">—</div></div>
+
+        <div class="tips" id="rTips"></div>
+
+        <div style="margin-top:10px"><b>Recommended Doctors (based on selected city)</b></div>
+        <div class="doctor-list" id="docList"></div>
+
+        <div style="margin-top:12px">
+          <button class="btn ghost" id="openMaps">Open Google Maps for specialists</button>
+          <button class="btn" id="openWeb">Open Web search</button>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer>© Teen Health Helper — Educational demo. For emergencies call local emergency services.</footer>
+
+  <script>
+    /*************************************************************************
+     *  Knowledge base:
+     *  - categories -> symptom -> { condition, type, causes (array), remedy (array), specialist }
+     *  Specialist string used to map to doctors database.
+     *************************************************************************/
+    const KB = {
+      "ENT (Ear • Nose • Throat)": {
+        "Sore throat": { condition:"Tonsillitis/Pharyngitis", type:"ENT/Respiratory", causes:["Viral infection","Bacterial infection","Cold drinks"], remedy:["Warm salt-water gargle 2-3 times daily","Warm fluids (tea with honey)","Avoid cold drinks and heavy talking"], specialist:"ENT" },
+        "Cold & Cough": { condition:"Upper respiratory infection", type:"Respiratory", causes:["Viral infections","Allergy","Pollution"], remedy:["Steam inhalation 10 min","Stay hydrated, rest","Use lozenges/saline nasal drops"], specialist:"Pulmonologist / ENT" },
+        "Ear pain": { condition:"Otitis (ear infection)", type:"ENT", causes:["Water in ear","After a cold","Earwax impaction"], remedy:["Warm compress outside ear","Avoid inserting objects into ear","See ENT if severe"], specialist:"ENT" },
+        "Sinus / Blocked nose": { condition:"Sinusitis / Rhinitis", type:"ENT", causes:["Allergy","Cold","Anatomical blockage"], remedy:["Nasal saline rinse","Steam inhalation","Antihistamine if allergic (consult)"], specialist:"ENT" },
+        "Eye irritation / Red eye": { condition:"Conjunctivitis / Eye strain", type:"Ophthalmology/ENT", causes:["Infection","Allergy","Excess screen time"], remedy:["Avoid rubbing eyes","Use artificial tears if needed","See ophthalmologist if vision changes"], specialist:"Ophthalmologist" }
+      },
+      "Dental & Oral": {
+        "Toothache": { condition:"Dental caries / pulpitis", type:"Dental", causes:["Cavities","Poor oral hygiene","Sweets"], remedy:["Warm salt-water rinse","Clove oil dab (temporary)","Avoid very cold or hot food"], specialist:"Dentist" },
+        "Bleeding gums": { condition:"Gingivitis", type:"Dental", causes:["Plaque buildup","Vitamin C deficiency","Hard brushing"], remedy:["Brush gently with soft brush","Use antiseptic mouthwash","See dentist for cleaning"], specialist:"Dentist" },
+        "Mouth ulcers": { condition:"Aphthous ulcers", type:"Dental/GI", causes:["Stress","Minor trauma","Nutritional deficiency"], remedy:["Topical antiseptic gels","Avoid spicy food","Eat vitamin-rich food"], specialist:"Dentist / GP" },
+        "Bad breath": { condition:"Halitosis", type:"Dental/GI", causes:["Poor oral hygiene","GI reflux","Dry mouth"], remedy:["Brush tongue, hydrate","Use mouthwash","See dentist if persists"], specialist:"Dentist" }
+      },
+      "Skin & Hair": {
+        "Acne / Pimples": { condition:"Acne vulgaris", type:"Dermatology", causes:["Hormonal changes","Oily skin","Diet/stress"], remedy:["Wash face twice daily with gentle cleanser","Avoid popping pimples","Consult dermatologist for persistent severe acne"], specialist:"Dermatologist" },
+        "Dandruff": { condition:"Seborrheic dermatitis", type:"Dermatology", causes:["Oily scalp","Fungal overgrowth","Stress"], remedy:["Anti-dandruff shampoo","Reduce styling products","Consult dermatologist if severe"], specialist:"Dermatologist" },
+        "Skin rash / Itching": { condition:"Allergic dermatitis / fungal", type:"Dermatology", causes:["Contact allergen","Fungal infection","Heat rash"], remedy:["Keep area dry and clean","Use aloe vera or soothing lotion","See dermatologist if spreading"], specialist:"Dermatologist" },
+        "Hair fall": { condition:"Telogen effluvium / nutritional", type:"Dermatology", causes:["Stress","Iron deficiency","Harsh styling"], remedy:["Balanced diet rich in iron & protein","Gentle hair care","See dermatologist if excessive fall"], specialist:"Dermatologist" }
+      },
+      "Stomach & Digestion": {
+        "Stomach pain / Indigestion": { condition:"Gastritis / Indigestion", type:"Gastroenterology", causes:["Spicy/junk food","Irregular meals","Stress"], remedy:["Small bland meals","Avoid spicy/oily foods","Antacids if needed - consult doctor"], specialist:"Gastroenterologist" },
+        "Diarrhea": { condition:"Gastroenteritis / Food poisoning", type:"Gastroenterology", causes:["Contaminated food/water","Viral infection"], remedy:["Hydration with ORS","Light diet (BRAT)","See doctor if blood in stools or high fever"], specialist:"Gastroenterologist" },
+        "Vomiting": { condition:"Acute gastritis / food poisoning", type:"Gastroenterology", causes:["Spoiled food","Overeating"], remedy:["Small sips of clear fluids","Ginger/ORS","See doctor if persistent"], specialist:"Gastroenterologist" },
+        "Constipation": { condition:"Functional constipation", type:"Gastroenterology", causes:["Low fibre","Dehydration","Inactive lifestyle"], remedy:["Increase fibre & water","Regular exercise","Use mild laxative if advised"], specialist:"Gastroenterologist" },
+        "Acidity / Heartburn": { condition:"GERD / Reflux", type:"Gastroenterology", causes:["Late-night meals","Spicy/fried food","Stress"], remedy:["Avoid late heavy meals","Elevate head while sleeping","Antacids short-term"], specialist:"Gastroenterologist" }
+      },
+      "Muscle • Bone • Sports": {
+        "Back pain / Postural pain": { condition:"Mechanical back pain", type:"Orthopedic/Physio", causes:["Bad posture","Long sitting","Heavy bags"], remedy:["Posture breaks, stretches","Strengthen core exercises","See physio if persistent"], specialist:"Orthopedic / Physiotherapist" },
+        "Sprain / Sports injury": { condition:"Ligament sprain", type:"Orthopedic", causes:["Twist/fall","Overuse"], remedy:["RICE (rest, ice, compress, elevate)","Physio after 48h","See ortho for severe instability"], specialist:"Orthopedic" },
+        "Muscle cramps": { condition:"Electrolyte/overuse cramps", type:"Sports Medicine", causes:["Dehydration","Low electrolytes","Overexertion"], remedy:["Hydrate with electrolytes","Gentle stretching","Rest & nutrition"], specialist:"Sports Physician / Orthopedic" }
+      },
+      "Respiratory & Lungs": {
+        "Asthma / Wheeze": { condition:"Bronchial asthma", type:"Pulmonology", causes:["Allergens","Viral triggers","Exercise-induced"], remedy:["Carry inhaler if prescribed","Avoid triggers","See pulmonologist for diagnosis & inhaler plan"], specialist:"Pulmonologist" },
+        "Breathlessness": { condition:"Dyspnea, needs urgent evaluation", type:"Pulmonology/Cardio", causes:["Asthma, severe infection, anxiety"], remedy:["If severe → seek emergency care","If mild, sit upright & breathe slowly"], specialist:"Pulmonologist / Cardiologist" }
+      },
+      "Mental Health & Sleep": {
+        "Stress": { condition:"Acute stress reaction", type:"Mental Health", causes:["Exam pressure","Relationship/family stress"], remedy:["Deep breathing (4-7-8)","Short walks, talk to friend/counselor","Limit caffeine"], specialist:"Psychologist / Counselor" },
+        "Anxiety": { condition:"Anxiety disorder (screening)", type:"Mental Health", causes:["Chronic worry","Sleep debt"], remedy:["Mindfulness, journaling","Limit stimulants, sleep hygiene","See counselor/psychologist if impairing life"], specialist:"Psychiatrist / Psychologist" },
+        "Depression / Low mood": { condition:"Depression screening", type:"Mental Health", causes:["Prolonged stress, trauma"], remedy:["Talk therapy, routine, sunlight exposure","See mental health professional for persistent low mood"], specialist:"Psychiatrist / Psychologist" },
+        "Insomnia": { condition:"Sleep disorder", type:"Sleep/Lifestyle", causes:["Irregular routine","Screens before bed"], remedy:["No screens 60 min before bed","Fixed sleep-wake schedule","Relaxation techniques"], specialist:"Sleep clinic / Psychiatrist" }
+      },
+      "Women’s Health": {
+        "Menstrual cramps": { condition:"Dysmenorrhea", type:"Gynaecology", causes:["Strong uterine contractions","Primary dysmenorrhea"], remedy:["Warm pack on lower abdomen","NSAIDs if needed (consult)","Gentle exercise"], specialist:"Gynecologist" },
+        "Irregular periods": { condition:"Cycle irregularity (PCOS etc.)", type:"Gynaecology/Endocrine", causes:["Hormonal imbalance","Stress"], remedy:["Track cycles, balanced diet","See gynecologist for tests"], specialist:"Gynecologist / Endocrinologist" }
+      },
+      "General": {
+        "Fever": { condition:"Fever (likely viral)", type:"General Medicine", causes:["Viral infections","Bacterial infections"], remedy:["Rest, fluids, paracetamol as per dose","See GP if high >102°F or prolonged"], specialist:"General Physician" },
+        "Headache / Migraine": { condition:"Tension or migraine", type:"Neurology/General", causes:["Stress","Dehydration","Screens"], remedy:["Hydrate, rest in dark room","OTC analgesics per label","See doctor if severe/recurrent"], specialist:"Neurologist / GP" },
+        "Fatigue / Weakness": { condition:"Lifestyle/anemia screening", type:"General", causes:["Poor diet","Poor sleep","Anemia"], remedy:["Balanced diet, iron-rich food","Sleep 7–9 hours","See GP for tests if persistent"], specialist:"General Physician" }
+      }
+    };
+
+    /*************************************************************************
+     * Doctors DB: mapping specialist -> city -> array of doctors (dummy realistic entries)
+     * (You can add or replace entries as needed)
+     *************************************************************************/
+    const DOCTORS = {
+      "ENT": {
+        "Pune":[{name:"Dr. Meera Sharma (ENT)", address:"City ENT Clinic, MG Road", phone:"+91 98765 43210"}],
+        "Mumbai":[{name:"Dr. K. Mehta (ENT)", address:"Mumbai ENT Center, Bandra", phone:"+91 99887 76655"}],
+        "Delhi":[{name:"Dr. R. Khanna (ENT)", address:"Connaught ENT Care, CP", phone:"+91 98700 11223"}],
+        "Bangalore":[{name:"Dr. S. Rao (ENT)", address:"Bangalore ENT Clinic, Indiranagar", phone:"+91 88000 11223"}]
+      },
+      "Pulmonologist / ENT": {
+        "Pune":[{name:"Dr. Vikram Kulkarni (Pulmonologist)", address:"Lung Care Clinic, Camp", phone:"+91 77665 55443"}],
+        "Mumbai":[{name:"Dr. N. Shah (Pulmonologist)", address:"BreatheWell, Andheri", phone:"+91 99880 12345"}]
+      },
+      "Ophthalmologist": {
+        "Pune":[{name:"Dr. Ritu Jain (Eye)", address:"VisionPlus, JM Road", phone:"+91 77660 99887"}],
+        "Mumbai":[{name:"Dr. A. Khan (Eye)", address:"EyeCare, Colaba", phone:"+91 99900 11223"}]
+      },
+      "Dentist": {
+        "Pune":[{name:"Dr. Rakesh Singh (Dentist)", address:"Smile Dental, FC Road", phone:"+91 98770 01122"}],
+        "Delhi":[{name:"Dr. Priya Nair (Dentist)", address:"Smile Care, Karol Bagh", phone:"+91 99112 23344"}],
+        "Mumbai":[{name:"Dr. A. Kulkarni (Dentist)", address:"Pearl Dental, Dadar", phone:"+91 98112 34567"}]
+      },
+      "Dermatologist": {
+        "Pune":[{name:"Dr. Kavya Iyer (Dermatologist)", address:"Clear Skin Clinic, Koregaon Park", phone:"+91 77665 54433"}],
+        "Mumbai":[{name:"Dr. S. Khan (Dermatologist)", address:"SkinCare Center, Andheri", phone:"+91 98765 00011"}]
+      },
+      "Gastroenterologist": {
+        "Pune":[{name:"Dr. M. Patel (Gastro)", address:"Digestive Care, Camp", phone:"+91 91122 33445"}],
+        "Mumbai":[{name:"Dr. L. Desai (Gastro)", address:"Gut Health Clinic, Bandra", phone:"+91 90909 12345"}]
+      },
+      "Orthopedic / Physiotherapist": {
+        "Pune":[{name:"Dr. Arjun Mehta (Orthopedic)", address:"OrthoPlus, Aundh", phone:"+91 70000 11122"},{name:"Physio Care", address:"Physio Center, Shivaji Nagar", phone:"+91 70200 22233"}]
+      },
+      "Pulmonologist": {
+        "Pune":[{name:"Dr. Vikram Kulkarni (Pulmo)", address:"Lung Care Clinic, Camp", phone:"+91 77665 55443"}],
+        "Mumbai":[{name:"Dr. R. Shah (Pulmo)", address:"BreathWell, Andheri", phone:"+91 99880 12345"}]
+      },
+      "Psychiatrist": {
+        "Pune":[{name:"Dr. Amit Gupta (Psychiatrist)", address:"Mind Wellness, Kalyani Nagar", phone:"+91 99887 76655"}],
+        "Delhi":[{name:"Dr. S. Bose (Psychiatrist)", address:"City Mind Care, Saket", phone:"+91 98777 66554"}]
+      },
+      "Psychologist": {
+        "Pune":[{name:"Ms. R. Joshi (Psychologist)", address:"Campus Counselling, Pune Uni", phone:"+91 70001 22334"}],
+        "Bangalore":[{name:"Ms. N. Rao (Counselor)", address:"Student Support, Jayanagar", phone:"+91 90090 90909"}]
+      },
+      "Gynecologist": {
+        "Pune":[{name:"Dr. Shalini Desai (Gyn)", address:"Women's Health, Koregaon Park", phone:"+91 88776 65544"}]
+      },
+      "General Physician": {
+        "Pune":[{name:"Dr. Ritu Saxena (GP)", address:"City Hospital, Shivaji Nagar", phone:"+91 77889 90011"}],
+        "Mumbai":[{name:"Dr. V. Rao (GP)", address:"Metro Clinic, Andheri", phone:"+91 99881 23456"}],
+        "Delhi":[{name:"Dr. R. Verma (GP)", address:"HealthFirst, Rohini", phone:"+91 98777 44556"}]
+      },
+      "Neurologist / GP": {
+        "Pune":[{name:"Dr. Ajay Kulkarni (Neurologist)", address:"Brain Care, Aundh", phone:"+91 66554 43322"}]
+      },
+      "Sports Physician / Orthopedic": {
+        "Pune":[{name:"Dr. S. Nair (Sports Med)", address:"Sports Health, Shivajinagar", phone:"+91 70002 33445"}]
+      },
+      "Sleep clinic": {
+        "Pune":[{name:"Sleep Clinic Pune", address:"SleepCare, Viman Nagar", phone:"+91 70200 33444"}]
+      }
+    };
+
+    /*************************************************************************
+     * Helper functions and UI logic
+     *************************************************************************/
+    const categoryEl = document.getElementById('category');
+    const symptomEl = document.getElementById('symptom');
+    const cityEl = document.getElementById('city');
+    const cityOtherEl = document.getElementById('cityOther');
+    const stepperPills = document.querySelectorAll('.stepper .step');
+    const resultCard = document.getElementById('result');
+
+    // populate categories
+    Object.keys(KB).forEach(cat=>{
+      const opt = document.createElement('option'); opt.value=cat; opt.textContent=cat; categoryEl.appendChild(opt);
+    });
+
+    // navigation buttons
+    document.getElementById('to2').addEventListener('click', ()=>{
+      if(!categoryEl.value){ alert('Please select a category'); return; }
+      populateSymptoms(categoryEl.value);
+      document.getElementById('step1').style.display='none';
+      document.getElementById('step2').style.display='block';
+      setStepper(1);
+    });
+
+    document.getElementById('back1').addEventListener('click', ()=>{
+      document.getElementById('step2').style.display='none';
+      document.getElementById('step1').style.display='block';
+      setStepper(0);
+    });
+
+    document.getElementById('to3').addEventListener('click', ()=>{
+      if(!symptomEl.value){ alert('Please select a symptom'); return; }
+      document.getElementById('step2').style.display='none';
+      document.getElementById('step3').style.display='block';
+      setStepper(2);
+    });
+
+    document.getElementById('back2').addEventListener('click', ()=>{
+      document.getElementById('step3').style.display='none';
+      document.getElementById('step2').style.display='block';
+      setStepper(1);
+      // reset severity selection visuals:
+      document.querySelectorAll('.sev').forEach(s=>s.classList.remove('active'));
+      chosenSeverity = null;
+    });
+
+    let chosenSeverity = null;
+    document.querySelectorAll('.sev').forEach(btn=>{
+      btn.addEventListener('click', ()=> {
+        document.querySelectorAll('.sev').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active'); chosenSeverity = btn.dataset.level;
+      });
+    });
+
+    document.getElementById('to4').addEventListener('click', ()=>{
+      if(!chosenSeverity){ alert('Please select severity'); return; }
+      document.getElementById('step3').style.display='none';
+      document.getElementById('step4').style.display='block';
+      setStepper(3);
+    });
+
+    document.getElementById('back3').addEventListener('click', ()=>{
+      document.getElementById('step4').style.display='none';
+      document.getElementById('step3').style.display='block';
+      setStepper(2);
+    });
+
+    // city select logic: show other input
+    cityEl.addEventListener('change', ()=>{
+      if(cityEl.value === 'Other') cityOtherEl.style.display='block'; else cityOtherEl.style.display='none';
+    });
+
+    document.getElementById('finish').addEventListener('click', showRecommendation);
+
+    // set stepper active pill
+    function setStepper(idx){
+      stepperPills.forEach((p,i)=>p.classList.toggle('active', i<=idx));
+    }
+
+    // populate symptoms
+    function populateSymptoms(cat){
+      symptomEl.innerHTML = '<option value="">— Select symptom —</option>';
+      Object.keys(KB[cat]).forEach(sym=>{
+        const o = document.createElement('option'); o.value = sym; o.textContent = sym; symptomEl.appendChild(o);
+      });
+    }
+
+    // Build and show recommendation
+    function showRecommendation(){
+      const category = categoryEl.value;
+      const symptom = symptomEl.value;
+      let city = cityEl.value || '';
+      if(city === 'Other'){
+        city = cityOtherEl.value.trim();
+        if(!city){ alert('Please type your city'); return; }
+      }
+      if(!category || !symptom || !chosenSeverity) { alert('Please complete steps'); return; }
+
+      const info = KB[category][symptom];
+      // Severity mapping
+      let severityBadge = '', severityNote='';
+      if(chosenSeverity === 'mild'){ severityBadge = '<span class="badge ok">Mild</span>'; severityNote = 'Self-care + monitor for 48–72 hours.'; }
+      else if(chosenSeverity === 'moderate'){ severityBadge = '<span class="badge warn">Moderate</span>'; severityNote = 'Consult a specialist within 24–48 hours if no improvement.'; }
+      else { severityBadge = '<span class="badge danger">Severe</span>'; severityNote = 'Seek immediate medical attention.'; }
+
+      // Render primary info
+      document.getElementById('rCategory').textContent = category;
+      document.getElementById('rSymptom').textContent = symptom;
+      document.getElementById('rCondition').textContent = info.condition;
+      document.getElementById('rType').textContent = info.type;
+      document.getElementById('rCause').innerHTML = info.causes.map(c=>`• ${c}`).join('<br>');
+      document.getElementById('rRemedy').innerHTML = info.remedy.map(r=>`• ${r}`).join('<br>');
+      document.getElementById('rSeverity').innerHTML = severityBadge + ' &nbsp; ' + severityNote;
+
+      // Severity-aware extra tips
+      const tipsEl = document.getElementById('rTips');
+      let tipsHTML = '<div style="margin-top:8px"><b>Extra Tips:</b><ul style="margin:6px 0 0 18px">';
+      if(chosenSeverity === 'severe'){
+        tipsHTML += '<li>If breathing difficulty, chest pain, fainting, or very high fever, call emergency services immediately.</li>';
+      }
+      tipsHTML += `<li>${severityNote}</li>`;
+      tipsHTML += '</ul></div>';
+      tipsEl.innerHTML = tipsHTML;
+
+      // Doctors: look up by specialist mapped -> DOCTORS
+      const specialistKey = info.specialist; // e.g. "Dentist" or "ENT"
+      const doctorsDiv = document.getElementById('docList');
+      doctorsDiv.innerHTML = '';
+
+      // choose city key normalized (capitalize first letter)
+      const cityKey = city ? (city.charAt(0).toUpperCase() + city.slice(1)) : '';
+
+      let foundDocs = [];
+      // Try direct mapping
+      if(DOCTORS[specialistKey]){
+        if(cityKey && DOCTORS[specialistKey][cityKey]) foundDocs = DOCTORS[specialistKey][cityKey];
+        else {
+          // try any city entries
+          const map = DOCTORS[specialistKey];
+          for(const c in map) foundDocs = foundDocs.concat(map[c]);
+        }
+      } else {
+        // specialistKey might be composite like "Pulmonologist / ENT" or "Neurologist / GP"
+        // attempt split by "/" and try each
+        const parts = specialistKey.split('/').map(s=>s.trim());
+        for(const part of parts){
+          if(DOCTORS[part]){
+            if(cityKey && DOCTORS[part][cityKey]) foundDocs = foundDocs.concat(DOCTORS[part][cityKey]);
+            else {
+              const map = DOCTORS[part];
+              for(const c in map) foundDocs = foundDocs.concat(map[c]);
+            }
+          }
+        }
+      }
+
+      if(foundDocs.length === 0){
+        doctorsDiv.innerHTML = `<div class="muted">No built-in doctors for "${specialistKey}" in ${city || 'selected area'}. Try web search below.</div>`;
+      } else {
+        foundDocs.forEach(d=>{
+          const el = document.createElement('div'); el.className='doc';
+          el.innerHTML = `<strong>${d.name}</strong><div class="muted">${d.address}</div><div style="margin-top:6px">📞 ${d.phone}</div>`;
+          doctorsDiv.appendChild(el);
+        });
+      }
+
+      // Build search links
+      const mapsBtn = document.getElementById('openMaps');
+      const webBtn = document.getElementById('openWeb');
+      const query = encodeURIComponent(`${specialistKey} near ${city || ''}`);
+      mapsBtn.onclick = ()=> window.open(`https://www.google.com/maps/search/${query}`, '_blank');
+      webBtn.onclick = ()=> window.open(`https://www.google.com/search?q=${query}`, '_blank');
+
+      // show result panel
+      resultCard.classList.add('visible');
+      // scroll to result
+      resultCard.scrollIntoView({behavior:'smooth'});
+    }
+
+    // initial hide result
+    resultCard.classList.remove('visible');
+  </script>
+</body>
+</html>
